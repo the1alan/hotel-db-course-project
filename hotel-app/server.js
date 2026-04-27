@@ -25,7 +25,17 @@ app.get("/", (req, res) => {
     message: "Hotel database management API is running",
   });
 });
-require("./app/routes/guest.routes")(app);
+
+require("./app/routes/roomType.routes.js")(app);
+require("./app/routes/room.routes.js")(app);
+require("./app/routes/guest.routes.js")(app);
+require("./app/routes/booking.routes.js")(app);
+require("./app/routes/payment.routes.js")(app);
+require("./app/routes/service.routes.js")(app);
+require("./app/routes/bookingService.routes.js")(app);
+require("./app/routes/staff.routes.js")(app);
+require("./app/routes/references.routes.js")(app);
+
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {

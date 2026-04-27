@@ -1,0 +1,14 @@
+{
+  "name": "hotel-db-course-project",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "backend": "npm --prefix hotel-app run dev",
+    "frontend": "npm --prefix client run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "install:all": "npm --prefix hotel-app install && npm --prefix client install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

@@ -8,8 +8,6 @@ module.exports = (db) => {
   db.rooms.hasMany(db.bookings, { foreignKey: "roomId" });
   db.bookings.belongsTo(db.rooms, { foreignKey: "roomId" });
 
-  db.staff.hasMany(db.bookings, { foreignKey: "staffId" });
-  db.bookings.belongsTo(db.staff, { foreignKey: "staffId" });
 
   db.bookings.hasMany(db.payments, { foreignKey: "bookingId" });
   db.payments.belongsTo(db.bookings, { foreignKey: "bookingId" });

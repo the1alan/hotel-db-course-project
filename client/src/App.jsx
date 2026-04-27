@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 
+const users = {
+  admin: { password: "admin123", role: "admin", label: "Администратор" },
+  guest: { password: "guest123", role: "guest", label: "Гость" },
+};
+
 const sections = [
-  { id: "home", label: "Главная" },
-  { id: "guests", label: "Гости" },
-  { id: "roomTypes", label: "Типы комнат" },
-  { id: "rooms", label: "Комнаты" },
-  { id: "bookings", label: "Бронирования" },
-  { id: "payments", label: "Платежи" },
-  { id: "services", label: "Услуги" },
-  { id: "staff", label: "Сотрудники" },
-  { id: "bookingServices", label: "Связи услуг" },
-  { id: "references", label: "Справочники" },
+  { id: "home", label: "Главная", roles: ["admin", "guest"] },
+  { id: "guests", label: "Гости", roles: ["admin"] },
+  { id: "roomTypes", label: "Типы комнат", roles: ["admin", "guest"] },
+  { id: "rooms", label: "Комнаты", roles: ["admin", "guest"] },
+  { id: "bookings", label: "Бронирования", roles: ["admin"] },
+  { id: "payments", label: "Платежи", roles: ["admin"] },
+  { id: "services", label: "Услуги", roles: ["admin", "guest"] },
+  { id: "staff", label: "Сотрудники", roles: ["admin"] },
+  { id: "bookingServices", label: "Связи услуг", roles: ["admin"] },
+  { id: "references", label: "Справочники", roles: ["admin"] },
 ];
 
 const apiConfig = {
@@ -139,16 +144,58 @@ const parseFormValues = (fields, formValues) => {
 };
 
 function App() {
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem("hotelUser");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginError, setLoginError] = useState("");
   const [activeSection, setActiveSection] = useState("home");
   const [dataMap, setDataMap] = useState({});
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState({});
   const [formMap, setFormMap] = useState({});
 
+  const isAdmin = currentUser?.role === "admin";
+
+  const availableSections = useMemo(
+    () => sections.filter((section) => section.roles.includes(currentUser?.role)),
+    [currentUser]
+  );
+
   const isEntitySection = useMemo(
     () => entitySections.includes(activeSection) || activeSection === "bookingServices",
     [activeSection]
   );
+
+  const handleLogin = (event) => {
+    event.preventDefault();
+    const foundUser = users[loginForm.username.trim().toLowerCase()];
+
+    if (!foundUser || foundUser.password !== loginForm.password) {
+      setLoginError("Неверный логин или пароль");
+      return;
+    }
+
+    const userData = {
+      username: loginForm.username.trim().toLowerCase(),
+      role: foundUser.role,
+      label: foundUser.label,
+    };
+
+    localStorage.setItem("hotelUser", JSON.stringify(userData));
+    setCurrentUser(userData);
+    setLoginError("");
+    setActiveSection("home");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("hotelUser");
+    setCurrentUser(null);
+    setLoginForm({ username: "", password: "" });
+    setActiveSection("home");
+    setDataMap({});
+  };
 
   const fetchData = async (sectionId) => {
     const config = apiConfig[sectionId];
@@ -174,9 +221,15 @@ function App() {
   };
 
   useEffect(() => {
-    if (activeSection === "home") return;
+    if (!currentUser || activeSection === "home") return;
     fetchData(activeSection);
-  }, [activeSection]);
+  }, [activeSection, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const sectionIsAllowed = availableSections.some((section) => section.id === activeSection);
+    if (!sectionIsAllowed) setActiveSection("home");
+  }, [activeSection, availableSections, currentUser]);
 
   const handleInputChange = (sectionId, fieldName, value) => {
     setFormMap((prev) => ({
@@ -189,6 +242,8 @@ function App() {
   };
 
   const handleCreate = async (sectionId) => {
+    if (!isAdmin) return;
+
     const config = apiConfig[sectionId];
     if (!config?.form) return;
 
@@ -215,6 +270,8 @@ function App() {
   };
 
   const handleDelete = async (sectionId, id) => {
+    if (!isAdmin) return;
+
     const config = apiConfig[sectionId];
     if (!config?.endpoint) return;
 
@@ -232,6 +289,47 @@ function App() {
     }
   };
 
+  const renderLogin = () => (
+    <div className="login-page">
+      <form className="login-card" onSubmit={handleLogin}>
+        <h1>Вход в систему гостиницы</h1>
+        <p>Выберите роль для работы с курсовым проектом.</p>
+
+        <label>
+          Логин
+          <input
+            type="text"
+            value={loginForm.username}
+            onChange={(e) => setLoginForm((prev) => ({ ...prev, username: e.target.value }))}
+            placeholder="admin или guest"
+            required
+          />
+        </label>
+
+        <label>
+          Пароль
+          <input
+            type="password"
+            value={loginForm.password}
+            onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="Введите пароль"
+            required
+          />
+        </label>
+
+        {loginError && <p className="error">{loginError}</p>}
+
+        <button type="submit">Войти</button>
+
+        <div className="demo-users">
+          <strong>Данные для проверки:</strong>
+          <span>Админ: admin / admin123</span>
+          <span>Гость: guest / guest123</span>
+        </div>
+      </form>
+    </div>
+  );
+
   const renderTable = (sectionId) => {
     const config = apiConfig[sectionId];
     const rows = Array.isArray(dataMap[sectionId]) ? dataMap[sectionId] : [];
@@ -244,13 +342,13 @@ function App() {
               {config.columns.map((column) => (
                 <th key={column}>{column}</th>
               ))}
-              {config.form && <th>Действия</th>}
+              {isAdmin && config.form && <th>Действия</th>}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={config.columns.length + (config.form ? 1 : 0)}>Нет данных</td>
+                <td colSpan={config.columns.length + (isAdmin && config.form ? 1 : 0)}>Нет данных</td>
               </tr>
             ) : (
               rows.map((row) => (
@@ -258,7 +356,7 @@ function App() {
                   {config.columns.map((column) => (
                     <td key={`${row.id}-${column}`}>{String(row[column] ?? "")}</td>
                   ))}
-                  {config.form && (
+                  {isAdmin && config.form && (
                     <td>
                       <button className="danger" onClick={() => handleDelete(sectionId, row.id)}>
                         Удалить
@@ -275,6 +373,8 @@ function App() {
   };
 
   const renderForm = (sectionId) => {
+    if (!isAdmin) return null;
+
     const config = apiConfig[sectionId];
     if (!config?.form) return null;
 
@@ -321,15 +421,25 @@ function App() {
     );
   };
 
+  if (!currentUser) {
+    return renderLogin();
+  }
+
   return (
     <div className="layout">
-      <header>
-        <h1>Система управления гостиницей</h1>
-        <p>Frontend на React + Vite для курсового проекта</p>
+      <header className="app-header">
+        <div>
+          <h1>Система управления гостиницей</h1>
+          <p>Frontend на React + Vite для курсового проекта</p>
+        </div>
+        <div className="user-panel">
+          <span>{currentUser.label}</span>
+          <button type="button" onClick={handleLogout}>Выйти</button>
+        </div>
       </header>
 
       <nav>
-        {sections.map((section) => (
+        {availableSections.map((section) => (
           <button
             key={section.id}
             className={activeSection === section.id ? "active" : ""}
@@ -344,18 +454,31 @@ function App() {
         {activeSection === "home" && (
           <div className="home">
             <h2>Главная страница</h2>
-            <p>Выберите раздел в верхнем меню, чтобы посмотреть данные и создать записи.</p>
-            <ul>
-              <li>Гости</li>
-              <li>Типы комнат</li>
-              <li>Комнаты</li>
-              <li>Бронирования</li>
-              <li>Платежи</li>
-              <li>Услуги</li>
-              <li>Сотрудники</li>
-              <li>Связи услуг</li>
-              <li>Справочники</li>
-            </ul>
+            {isAdmin ? (
+              <>
+                <p>Вы вошли как администратор. Доступны просмотр, создание и удаление записей.</p>
+                <ul>
+                  <li>Гости</li>
+                  <li>Типы комнат</li>
+                  <li>Комнаты</li>
+                  <li>Бронирования</li>
+                  <li>Платежи</li>
+                  <li>Услуги</li>
+                  <li>Сотрудники</li>
+                  <li>Связи услуг</li>
+                  <li>Справочники</li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <p>Вы вошли как гость. Доступен только просмотр открытых разделов.</p>
+                <ul>
+                  <li>Типы комнат</li>
+                  <li>Комнаты</li>
+                  <li>Услуги</li>
+                </ul>
+              </>
+            )}
           </div>
         )}
 

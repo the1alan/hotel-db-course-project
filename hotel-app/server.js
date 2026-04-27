@@ -25,7 +25,7 @@ app.get("/", (req, res) => {
     message: "Hotel database management API is running",
   });
 });
-
+require("./app/routes/guest.routes")(app);
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {

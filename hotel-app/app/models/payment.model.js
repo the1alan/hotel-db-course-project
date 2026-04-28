@@ -3,6 +3,9 @@ module.exports = (sequelize, Sequelize) => {
     amount: {
       type: Sequelize.DECIMAL(10, 2),
       allowNull: false,
+      validate: {
+        min: 0,
+      },
     },
     payment_date: {
       type: Sequelize.DATE,
@@ -14,9 +17,9 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
     },
     status: {
-      type: Sequelize.STRING,
+      type: Sequelize.ENUM("pending", "paid", "failed", "refunded"),
       allowNull: false,
-      defaultValue: "paid",
+      defaultValue: "pending",
     },
   });
 };

@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 const db = require("./app/models");
 
 db.sequelize
-  .sync()
+  .sync({ alter: true })
   .then(() => {
     console.log("Database synchronized.");
   })
@@ -20,12 +20,25 @@ db.sequelize
     console.log("Failed to synchronize database:", err.message);
   });
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.json({
     message: "Hotel database management API is running",
   });
 });
-require("./app/routes/guest.routes")(app);
+
+require("./app/routes/auth.routes.js")(app);
+require("./app/routes/user.routes.js")(app);
+require("./app/routes/roomType.routes.js")(app);
+require("./app/routes/room.routes.js")(app);
+require("./app/routes/guest.routes.js")(app);
+require("./app/routes/booking.routes.js")(app);
+require("./app/routes/payment.routes.js")(app);
+require("./app/routes/service.routes.js")(app);
+require("./app/routes/bookingService.routes.js")(app);
+require("./app/routes/staff.routes.js")(app);
+require("./app/routes/references.routes.js")(app);
+require("./app/routes/report.routes.js")(app);
+
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {

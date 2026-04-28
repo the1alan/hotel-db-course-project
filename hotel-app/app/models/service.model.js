@@ -10,6 +10,9 @@ module.exports = (sequelize, Sequelize) => {
     price: {
       type: Sequelize.DECIMAL(10, 2),
       allowNull: false,
+      validate: {
+        min: 0,
+      },
     },
   });
 };

@@ -7,9 +7,16 @@ module.exports = (sequelize, Sequelize) => {
     check_out_date: {
       type: Sequelize.DATEONLY,
       allowNull: false,
+      validate: {
+        isAfterCheckIn(value) {
+          if (new Date(value) <= new Date(this.check_in_date)) {
+            throw new Error("check_out_date must be later than check_in_date");
+          }
+        },
+      },
     },
     status: {
-      type: Sequelize.STRING,
+      type: Sequelize.ENUM("created", "confirmed", "checked_in", "checked_out", "cancelled"),
       allowNull: false,
       defaultValue: "created",
     },
@@ -17,6 +24,9 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
+      validate: {
+        min: 0,
+      },
     },
   });
 };

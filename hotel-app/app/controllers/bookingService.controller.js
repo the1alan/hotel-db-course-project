@@ -1,37 +1,65 @@
 const db = require("../models");
 const BookingService = db.bookingServices;
-const Booking = db.bookings;
-const Service = db.services;
-const { handleError } = require("../utils/http");
 
 exports.create = async (req, res) => {
   try {
-    const booking = await Booking.findByPk(req.body.bookingId);
-    const service = await Service.findByPk(req.body.serviceId);
-    if (!booking || !service) {
-      return res.status(400).json({ message: "bookingId and serviceId must be valid" });
-    }
-
-    res.status(201).json(await BookingService.create(req.body));
-  } catch (error) {
-    handleError(res, error, "Failed to create booking service");
+    const bookingService = await BookingService.create(req.body);
+    res.status(201).json(bookingService);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-exports.findAll = async (_req, res) => {
+exports.findAll = async (req, res) => {
   try {
-    res.json(await BookingService.findAll({ include: [Booking, Service] }));
-  } catch (error) {
-    handleError(res, error, "Failed to fetch booking services");
+    const bookingServices = await BookingService.findAll();
+    res.json(bookingServices);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.findOne = async (req, res) => {
+  try {
+    const bookingService = await BookingService.findByPk(req.params.id);
+    if (!bookingService) {
+      return res.status(404).json({ message: "BookingService not found" });
+    }
+
+    res.json(bookingService);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.update = async (req, res) => {
+  try {
+    const updated = await BookingService.update(req.body, {
+      where: { id: req.params.id },
+    });
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "BookingService not found" });
+    }
+
+    res.json({ message: "BookingService updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
-    const count = await BookingService.destroy({ where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Booking service not found" });
-    res.json({ message: "Booking service deleted successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to delete booking service");
+    const deleted = await BookingService.destroy({
+      where: { id: req.params.id },
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ message: "BookingService not found" });
+    }
+
+    res.json({ message: "BookingService deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

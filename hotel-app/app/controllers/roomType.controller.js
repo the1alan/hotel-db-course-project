@@ -1,50 +1,60 @@
 const db = require("../models");
 const RoomType = db.roomTypes;
-const { handleError } = require("../utils/http");
 
 exports.create = async (req, res) => {
   try {
-    const created = await RoomType.create(req.body);
-    res.status(201).json(created);
-  } catch (error) {
-    handleError(res, error, "Failed to create room type");
+    const roomType = await RoomType.create(req.body);
+    res.status(201).json(roomType);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-exports.findAll = async (_req, res) => {
+exports.findAll = async (req, res) => {
   try {
-    res.json(await RoomType.findAll());
-  } catch (error) {
-    handleError(res, error, "Failed to fetch room types");
+    const roomTypes = await RoomType.findAll();
+    res.json(roomTypes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.findOne = async (req, res) => {
   try {
-    const entity = await RoomType.findByPk(req.params.id);
-    if (!entity) return res.status(404).json({ message: "Room type not found" });
-    res.json(entity);
-  } catch (error) {
-    handleError(res, error, "Failed to fetch room type");
+    const roomType = await RoomType.findByPk(req.params.id);
+    if (!roomType) return res.status(404).json({ message: "Room type not found" });
+    res.json(roomType);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.update = async (req, res) => {
   try {
-    const [count] = await RoomType.update(req.body, { where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Room type not found" });
+    const updated = await RoomType.update(req.body, {
+      where: { id: req.params.id },
+    });
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "Room type not found" });
+    }
+
     res.json({ message: "Room type updated successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to update room type");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
-    const count = await RoomType.destroy({ where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Room type not found" });
+    const deleted = await RoomType.destroy({
+      where: { id: req.params.id },
+    });
+
+    if (!deleted) return res.status(404).json({ message: "Room type not found" });
+
     res.json({ message: "Room type deleted successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to delete room type");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

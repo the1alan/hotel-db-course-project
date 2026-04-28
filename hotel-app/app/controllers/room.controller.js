@@ -1,97 +1,60 @@
-const { Op } = require("sequelize");
 const db = require("../models");
 const Room = db.rooms;
-const RoomType = db.roomTypes;
-const Booking = db.bookings;
-const { ACTIVE_BOOKING_STATUSES } = require("../utils/bookingAvailability");
-const { handleError } = require("../utils/http");
 
 exports.create = async (req, res) => {
   try {
-    const roomType = await RoomType.findByPk(req.body.roomTypeId);
-    if (!roomType) return res.status(400).json({ message: "Invalid roomTypeId" });
-
-    const created = await Room.create(req.body);
-    res.status(201).json(created);
-  } catch (error) {
-    handleError(res, error, "Failed to create room");
+    const room = await Room.create(req.body);
+    res.status(201).json(room);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-exports.findAll = async (_req, res) => {
+exports.findAll = async (req, res) => {
   try {
-    const rooms = await Room.findAll({ include: [{ model: RoomType }] });
+    const rooms = await Room.findAll();
     res.json(rooms);
-  } catch (error) {
-    handleError(res, error, "Failed to fetch rooms");
-  }
-};
-
-exports.findAvailable = async (req, res) => {
-  try {
-    const { checkIn, checkOut } = req.query;
-    if (!checkIn || !checkOut) {
-      return res.status(400).json({ message: "checkIn and checkOut are required" });
-    }
-
-    if (new Date(checkOut) <= new Date(checkIn)) {
-      return res.status(400).json({ message: "checkOut must be later than checkIn" });
-    }
-
-    const conflicts = await Booking.findAll({
-      attributes: ["roomId"],
-      where: {
-        status: { [Op.in]: ACTIVE_BOOKING_STATUSES },
-        check_in_date: { [Op.lt]: checkOut },
-        check_out_date: { [Op.gt]: checkIn },
-      },
-    });
-
-    const busyRoomIds = [...new Set(conflicts.map((item) => item.roomId))];
-
-    const where = { status: { [Op.ne]: "maintenance" } };
-    if (busyRoomIds.length) {
-      where.id = { [Op.notIn]: busyRoomIds };
-    }
-
-    const rooms = await Room.findAll({ where, include: [{ model: RoomType }] });
-    res.json(rooms);
-  } catch (error) {
-    handleError(res, error, "Failed to fetch available rooms");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.findOne = async (req, res) => {
   try {
-    const room = await Room.findByPk(req.params.id, { include: [{ model: RoomType }] });
+    const room = await Room.findByPk(req.params.id);
     if (!room) return res.status(404).json({ message: "Room not found" });
     res.json(room);
-  } catch (error) {
-    handleError(res, error, "Failed to fetch room");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.update = async (req, res) => {
   try {
-    if (req.body.roomTypeId) {
-      const roomType = await RoomType.findByPk(req.body.roomTypeId);
-      if (!roomType) return res.status(400).json({ message: "Invalid roomTypeId" });
+    const updated = await Room.update(req.body, {
+      where: { id: req.params.id },
+    });
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "Room not found" });
     }
 
-    const [count] = await Room.update(req.body, { where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Room not found" });
     res.json({ message: "Room updated successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to update room");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
-    const count = await Room.destroy({ where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Room not found" });
+    const deleted = await Room.destroy({
+      where: { id: req.params.id },
+    });
+
+    if (!deleted) return res.status(404).json({ message: "Room not found" });
+
     res.json({ message: "Room deleted successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to delete room");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

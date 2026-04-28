@@ -26,8 +26,6 @@ app.get("/", (_req, res) => {
   });
 });
 
-require("./app/routes/auth.routes.js")(app);
-require("./app/routes/user.routes.js")(app);
 require("./app/routes/roomType.routes.js")(app);
 require("./app/routes/room.routes.js")(app);
 require("./app/routes/guest.routes.js")(app);
@@ -37,7 +35,6 @@ require("./app/routes/service.routes.js")(app);
 require("./app/routes/bookingService.routes.js")(app);
 require("./app/routes/staff.routes.js")(app);
 require("./app/routes/references.routes.js")(app);
-require("./app/routes/report.routes.js")(app);
 
 const PORT = process.env.PORT || 8080;
 

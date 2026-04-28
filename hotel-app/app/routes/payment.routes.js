@@ -1,13 +1,12 @@
 module.exports = (app) => {
-  const controller = require("../controllers/payment.controller.js");
-  const { verifyToken, requireRole } = require("../middleware/auth.middleware");
+  const payments = require("../controllers/payment.controller.js");
   const router = require("express").Router();
 
-  router.get("/", controller.findAll);
-  router.get("/:id", controller.findOne);
-  router.post("/", verifyToken, requireRole("admin", "manager", "receptionist"), controller.create);
-  router.put("/:id", verifyToken, requireRole("admin", "manager", "receptionist"), controller.update);
-  router.delete("/:id", verifyToken, requireRole("admin", "manager"), controller.delete);
+  router.post("/", payments.create);
+  router.get("/", payments.findAll);
+  router.get("/:id", payments.findOne);
+  router.put("/:id", payments.update);
+  router.delete("/:id", payments.delete);
 
   app.use("/api/payments", router);
 };

@@ -6,8 +6,6 @@
     "backend": "npm --prefix hotel-app run dev",
     "frontend": "npm --prefix client run dev",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "seed": "npm --prefix hotel-app run seed",
-    "build:frontend": "npm --prefix client run build",
     "install:all": "npm --prefix hotel-app install && npm --prefix client install"
   },
   "devDependencies": {

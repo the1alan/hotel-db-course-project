@@ -1,69 +1,60 @@
 const db = require("../models");
-const bcrypt = require("bcryptjs");
 const Staff = db.staff;
-const { handleError } = require("../utils/http");
-
-const sanitize = (item) => {
-  if (!item) return item;
-  const plain = item.toJSON ? item.toJSON() : item;
-  delete plain.password_hash;
-  return plain;
-};
 
 exports.create = async (req, res) => {
   try {
-    const payload = { ...req.body };
-    if (payload.password_hash) {
-      payload.password_hash = await bcrypt.hash(payload.password_hash, 10);
-    }
-
-    const created = await Staff.create(payload);
-    res.status(201).json(sanitize(created));
-  } catch (error) {
-    handleError(res, error, "Failed to create staff");
+    const staff = await Staff.create(req.body);
+    res.status(201).json(staff);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-exports.findAll = async (_req, res) => {
+exports.findAll = async (req, res) => {
   try {
-    const rows = await Staff.findAll();
-    res.json(rows.map(sanitize));
-  } catch (error) {
-    handleError(res, error, "Failed to fetch staff");
+    const staff = await Staff.findAll();
+    res.json(staff);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.findOne = async (req, res) => {
   try {
-    const row = await Staff.findByPk(req.params.id);
-    if (!row) return res.status(404).json({ message: "Staff member not found" });
-    res.json(sanitize(row));
-  } catch (error) {
-    handleError(res, error, "Failed to fetch staff");
+    const staff = await Staff.findByPk(req.params.id);
+    if (!staff) return res.status(404).json({ message: "Staff member not found" });
+    res.json(staff);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.update = async (req, res) => {
   try {
-    const payload = { ...req.body };
-    if (payload.password_hash) {
-      payload.password_hash = await bcrypt.hash(payload.password_hash, 10);
+    const updated = await Staff.update(req.body, {
+      where: { id: req.params.id },
+    });
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "Staff member not found" });
     }
 
-    const [count] = await Staff.update(payload, { where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Staff member not found" });
     res.json({ message: "Staff member updated successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to update staff");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
-    const count = await Staff.destroy({ where: { id: req.params.id } });
-    if (!count) return res.status(404).json({ message: "Staff member not found" });
+    const deleted = await Staff.destroy({
+      where: { id: req.params.id },
+    });
+
+    if (!deleted) return res.status(404).json({ message: "Staff member not found" });
+
     res.json({ message: "Staff member deleted successfully" });
-  } catch (error) {
-    handleError(res, error, "Failed to delete staff");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

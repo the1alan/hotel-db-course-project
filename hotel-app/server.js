@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 const db = require("./app/models");
 
 db.sequelize
-  .sync()
+  .sync({ alter: true })
   .then(() => {
     console.log("Database synchronized.");
   })
@@ -20,7 +20,7 @@ db.sequelize
     console.log("Failed to synchronize database:", err.message);
   });
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.json({
     message: "Hotel database management API is running",
   });

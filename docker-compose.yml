@@ -12,5 +12,29 @@ services:
     volumes:
       - hotel_db_data:/var/lib/postgresql/data
 
+  backend:
+    build: ./hotel-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgresdb
+    environment:
+      DB_HOST: postgresdb
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: hotel_db
+      JWT_SECRET: hotel_secret
+      PORT: 8080
+
+  frontend:
+    build: ./client
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8080
+
 volumes:
   hotel_db_data:

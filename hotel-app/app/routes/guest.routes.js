@@ -1,12 +1,13 @@
 module.exports = (app) => {
-  const guests = require("../controllers/guest.controller.js");
+  const controller = require("../controllers/guest.controller.js");
+  const { verifyToken, requireRole } = require("../middleware/auth.middleware");
   const router = require("express").Router();
 
-  router.post("/", guests.create);
-  router.get("/", guests.findAll);
-  router.get("/:id", guests.findOne);
-  router.put("/:id", guests.update);
-  router.delete("/:id", guests.delete);
+  router.get("/", controller.findAll);
+  router.get("/:id", controller.findOne);
+  router.post("/", verifyToken, requireRole("admin", "manager", "receptionist"), controller.create);
+  router.put("/:id", verifyToken, requireRole("admin", "manager", "receptionist"), controller.update);
+  router.delete("/:id", verifyToken, requireRole("admin", "manager"), controller.delete);
 
   app.use("/api/guests", router);
 };
